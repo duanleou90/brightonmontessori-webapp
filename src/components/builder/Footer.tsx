@@ -76,30 +76,38 @@ export function Footer({
               <div className="footer-item">
                 <div className="footer-title">Contact Info</div>
                 <ul className="list-info">
-                  <li>
-                    <div className="info-icon">
-                      <span className="fa fa-map-marker"></span>
-                    </div>
-                    <div className="info-text">{contactInfo.address}</div>
-                  </li>
-                  <li>
-                    <div className="info-icon">
-                      <span className="fa fa-phone"></span>
-                    </div>
-                    <div className="info-text">{contactInfo.phone}</div>
-                  </li>
-                  <li>
-                    <div className="info-icon">
-                      <span className="fa fa-envelope"></span>
-                    </div>
-                    <div className="info-text">{contactInfo.email}</div>
-                  </li>
-                  <li>
-                    <div className="info-icon">
-                      <span className="fa fa-clock-o"></span>
-                    </div>
-                    <div className="info-text">{contactInfo.hours}</div>
-                  </li>
+                  {contactInfo.address && (
+                    <li>
+                      <div className="info-icon">
+                        <span className="fa fa-map-marker"></span>
+                      </div>
+                      <div className="info-text">{contactInfo.address}</div>
+                    </li>
+                  )}
+                  {contactInfo.phone && (
+                    <li>
+                      <div className="info-icon">
+                        <span className="fa fa-phone"></span>
+                      </div>
+                      <div className="info-text">{contactInfo.phone}</div>
+                    </li>
+                  )}
+                  {contactInfo.email && (
+                    <li>
+                      <div className="info-icon">
+                        <span className="fa fa-envelope"></span>
+                      </div>
+                      <div className="info-text">{contactInfo.email}</div>
+                    </li>
+                  )}
+                  {contactInfo.hours && (
+                    <li>
+                      <div className="info-icon">
+                        <span className="fa fa-clock-o"></span>
+                      </div>
+                      <div className="info-text">{contactInfo.hours}</div>
+                    </li>
+                  )}
                 </ul>
               </div>
             </div>

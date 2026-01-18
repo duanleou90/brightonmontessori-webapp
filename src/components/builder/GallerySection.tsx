@@ -27,12 +27,14 @@ export function GallerySection({
     <div className="">
       <div className="content-wrap">
         <div className="container">
-          <div className="row">
-            <div className="col-sm-12 col-md-12">
-              <p className="supheading text-center">{supHeading}</p>
-              <h2 className="section-heading text-center mb-5">{heading}</h2>
+          {(supHeading || heading) && (
+            <div className="row">
+              <div className="col-sm-12 col-md-12">
+                {supHeading && <p className="supheading text-center">{supHeading}</p>}
+                {heading && <h2 className="section-heading text-center mb-5">{heading}</h2>}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="row popup-gallery gutter-5">
             {items.map((item, index) => (

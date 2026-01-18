@@ -6,13 +6,11 @@ interface EventPageLayoutProps {
   // Event Header fields (for 9-column)
   image?: string;
   name?: string;
-  publishedDate?: string;
+  publishedDate?: string | Date;
   // Sidebar fields (for 3-column)
   address?: string;
-  phone?: string;
-  website?: string;
-  startTime?: string;
-  endTime?: string;
+  startTime?: string | Date;
+  endTime?: string | Date;
   organizerName?: string;
   organizerPhone?: string;
   organizerWebsite?: string;
@@ -29,13 +27,11 @@ export function EventPageLayout({
   // Event Header fields
   image = '/images/dummy-img-900x600.jpg',
   name = 'English Day on Carfree day',
-  publishedDate = 'March 19, 2016 / 08:00 am - 10:00 am',
+  publishedDate = '2016-03-19',
   // Sidebar fields
   address = '99 S.t Jomblo Park Pekanbaru 28292. Indonesia',
-  phone = '074574217447',
-  website = 'http://www.website.com',
-  startTime = 'July 16 @ 11:00 am',
-  endTime = 'July 29 @ 4:00 pm',
+  startTime = '2016-07-16T11:00:00',
+  endTime = '2016-07-29T16:00:00',
   organizerName = 'Max Organizer',
   organizerPhone = '074574217447',
   organizerWebsite = 'http://www.website.com',
@@ -46,6 +42,43 @@ export function EventPageLayout({
   sidebarContent = [],
   builderBlock,
 }: EventPageLayoutProps) {
+  const publishedDateLabel = (() => {
+    if (!publishedDate) return '';
+    const date = publishedDate instanceof Date ? publishedDate : new Date(publishedDate);
+    if (Number.isNaN(date.getTime())) return typeof publishedDate === 'string' ? publishedDate : '';
+    return new Intl.DateTimeFormat(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(date);
+  })();
+
+  const startTimeLabel = (() => {
+    if (!startTime) return '';
+    const date = startTime instanceof Date ? startTime : new Date(startTime);
+    if (Number.isNaN(date.getTime())) return typeof startTime === 'string' ? startTime : '';
+    return new Intl.DateTimeFormat(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(date);
+  })();
+
+  const endTimeLabel = (() => {
+    if (!endTime) return '';
+    const date = endTime instanceof Date ? endTime : new Date(endTime);
+    if (Number.isNaN(date.getTime())) return typeof endTime === 'string' ? endTime : '';
+    return new Intl.DateTimeFormat(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(date);
+  })();
+
   return (
     <div className="section">
       <div className="content-wrap">
@@ -58,7 +91,7 @@ export function EventPageLayout({
                 <img src={image} alt={name} className="img-fluid rounded" />
                 <div className="spacer-30"></div>
                 <h2 className="title">{name}</h2>
-                <div className="meta-date">{publishedDate}</div>
+                <div className="meta-date">{publishedDateLabel}</div>
                 <div className="spacer-30"></div>
               </div>
               {/* Droppable content slot for 9-column using BuilderBlocks (Gen 1) */}
@@ -76,22 +109,14 @@ export function EventPageLayout({
                 <div className="widget-title">Venue</div>
                 <dl>
                   <dt>{address}</dt>
-                  <dt>Phone:</dt>
-                  <dd>{phone}</dd>
-                  <dt>Website:</dt>
-                  <dd>
-                    <a href={website} target="_blank" rel="noopener noreferrer">
-                      {website}
-                    </a>
-                  </dd>
                 </dl>
 
                 <div className="widget-title">Detail</div>
                 <dl>
                   <dt>Start:</dt>
-                  <dd>{startTime}</dd>
+                  <dd>{startTimeLabel}</dd>
                   <dt>End:</dt>
-                  <dd>{endTime}</dd>
+                  <dd>{endTimeLabel}</dd>
                 </dl>
 
                 <div className="widget-title">Organizer</div>
@@ -147,40 +172,28 @@ export const eventPageLayoutInfo = {
     },
     {
       name: 'publishedDate',
-      type: 'string',
-      defaultValue: 'March 19, 2016 / 08:00 am - 10:00 am',
-      helperText: 'Published date and time range',
+      type: 'date',
+      defaultValue: '2016-03-19',
+      helperText: 'Published date',
     },
     // Sidebar inputs
     {
       name: 'address',
-      type: 'string',
+      type: 'longText',
       defaultValue: '99 S.t Jomblo Park Pekanbaru 28292. Indonesia',
       helperText: 'Venue address',
     },
     {
-      name: 'phone',
-      type: 'string',
-      defaultValue: '074574217447',
-      helperText: 'Venue phone number',
-    },
-    {
-      name: 'website',
-      type: 'url',
-      defaultValue: 'http://www.website.com',
-      helperText: 'Venue website URL',
-    },
-    {
       name: 'startTime',
-      type: 'string',
-      defaultValue: 'July 16 @ 11:00 am',
-      helperText: 'Event start date and time',
+      type: 'date',
+      defaultValue: Date.now(),
+      helperText: 'Event start date/time',
     },
     {
       name: 'endTime',
-      type: 'string',
-      defaultValue: 'July 29 @ 4:00 pm',
-      helperText: 'Event end date and time',
+      type: 'date',
+      defaultValue: Date.now(),
+      helperText: 'Event end date/time',
     },
     {
       name: 'organizerName',

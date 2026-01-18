@@ -1,13 +1,16 @@
 'use client';
 
 interface EventTextBlockProps {
+  /**
+   * Builder.io `richText` value (HTML string).
+   */
   content?: string;
 }
 
 export function EventTextBlock({
-  content = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+  content = '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>',
 }: EventTextBlockProps) {
-  return <p>{content}</p>;
+  return <div dangerouslySetInnerHTML={{ __html: content }} />;
 }
 
 export const eventTextBlockInfo = {
@@ -16,10 +19,10 @@ export const eventTextBlockInfo = {
   inputs: [
     {
       name: 'content',
-      type: 'longText',
+      type: 'richText',
       defaultValue:
-        'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-      helperText: 'Text content for the paragraph',
+        '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>',
+      helperText: 'Rich text content (supports formatting/links)',
     },
   ],
 };

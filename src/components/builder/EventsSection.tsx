@@ -47,6 +47,8 @@ export function EventsSection({
     },
   ],
 }: EventsSectionProps) {
+  const safeEvents = Array.isArray(events) ? events : [];
+
   return (
     <div
       className="section bgi-cover-center"
@@ -63,7 +65,7 @@ export function EventsSection({
           </div>
 
           <div className="row mt-4">
-            {events.map((event, index) => (
+            {safeEvents.map((event, index) => (
               <div key={index} className="col-sm-12 col-md-12 col-lg-4 mb-5">
                 <div className="rs-news-1">
                   <div className="media-box">

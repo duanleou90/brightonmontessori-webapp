@@ -5,7 +5,7 @@ interface WhyChooseUsProps {
   supHeading?: string;
   heading?: string;
   description?: string;
-  checkPoints?: string[];
+  checkPoints?: Array<{ text: string }>;
   sideImageUrl?: string;
 }
 
@@ -15,9 +15,15 @@ export function WhyChooseUs({
   heading = 'Best Kindergarten',
   description = 'Dolor sit amet, dolor gravida placerat liberolorem ipsum dolor consectetur adipiscing elit, sed do eiusmod. Dolor sit amet consectetuer adipiscing elit, sed diam nonummy nibh euismod. Praesent interdum est gravida vehicula est node maecenas loareet morbi a dosis luctus novum est praesent. Praesent interdum est gravida vehicula est node maecenas loareet morbi a dosis luctus novum est praesent.',
   checkPoints = [
-    '100% education, for your kids, consectetuer adipiscing elit, sed diam nonummy nibh euismod. Dolor sit amet, dolor gravida placerat liberolorem ipsum dolor consectetur adipiscing elit, sed do eiusmod.',
-    'More programs activities, sed diam nonummy nibh euismod. Lorem ipsum dolor sit amet.',
-    'More benefit nonummy nibh euismod. Lorem ipsum dolor sit amet, consectetuer adipiscing elit.',
+    {
+      text: '100% education, for your kids, consectetuer adipiscing elit, sed diam nonummy nibh euismod. Dolor sit amet, dolor gravida placerat liberolorem ipsum dolor consectetur adipiscing elit, sed do eiusmod.',
+    },
+    {
+      text: 'More programs activities, sed diam nonummy nibh euismod. Lorem ipsum dolor sit amet.',
+    },
+    {
+      text: 'More benefit nonummy nibh euismod. Lorem ipsum dolor sit amet, consectetuer adipiscing elit.',
+    },
   ],
   sideImageUrl = '/images/dummy-img-600x700.jpg',
 }: WhyChooseUsProps) {
@@ -34,9 +40,9 @@ export function WhyChooseUs({
               <p className="supheading">{supHeading}</p>
               <h2 className="section-heading">{heading}</h2>
               <p className="text-white">{description}</p>
-              {checkPoints.map((point, index) => (
+              {checkPoints.map((item, index) => (
                 <p key={index} className="p-check text-white">
-                  {point}
+                  {item.text}
                 </p>
               ))}
               <div className="spacer-90"></div>
@@ -62,6 +68,17 @@ export const whyChooseUsInfo = {
       name: 'checkPoints',
       type: 'list',
       subFields: [{ name: 'text', type: 'longText' }],
+      defaultValue: [
+        {
+          text: '100% education, for your kids, consectetuer adipiscing elit, sed diam nonummy nibh euismod. Dolor sit amet, dolor gravida placerat liberolorem ipsum dolor consectetur adipiscing elit, sed do eiusmod.',
+        },
+        {
+          text: 'More programs activities, sed diam nonummy nibh euismod. Lorem ipsum dolor sit amet.',
+        },
+        {
+          text: 'More benefit nonummy nibh euismod. Lorem ipsum dolor sit amet, consectetuer adipiscing elit.',
+        },
+      ],
     },
     { name: 'sideImageUrl', type: 'file', allowedFileTypes: ['jpeg', 'jpg', 'png', 'webp'], defaultValue: '/images/dummy-img-600x700.jpg' },
   ],

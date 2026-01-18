@@ -10,12 +10,13 @@ interface HeaderProps {
   twitterUrl?: string;
   instagramUrl?: string;
   linkedinUrl?: string;
-  logoSrc?: string;
+  // Builder "file" inputs are usually strings, but can sometimes be objects depending on config/integrations.
+  logoSrc?: string | { url?: string } | null;
   navItems?: {
     label: string;
     url: string;
     isActive?: boolean;
-    dropdownItems?: { label: string; url: string }[];
+    dropdownItems?: { label: string; url: string }[] | null;
   }[];
 }
 
@@ -26,8 +27,18 @@ export function Header({
   twitterUrl = '#',
   instagramUrl = '#',
   linkedinUrl = '#',
-  logoSrc = '/images/logo.png',
-  navItems = [
+  logoSrc,
+  navItems,
+}: HeaderProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+
+  const resolvedLogoSrc =
+    (typeof logoSrc === 'string' && logoSrc) ||
+    (typeof logoSrc === 'object' && logoSrc?.url) ||
+    '/images/logo.png';
+
+  const defaultNavItems: NonNullable<HeaderProps['navItems']> = [
     { label: 'HOME', url: '/', isActive: true },
     { label: 'ABOUT US', url: '/about' },
     { label: 'CLASSES', url: '/classes' },
@@ -44,10 +55,11 @@ export function Header({
       ],
     },
     { label: 'CONTACT US', url: '/contact' },
-  ],
-}: HeaderProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  ];
+
+  // Builder can send null/invalid values; keep the component from throwing in the editor.
+  // If the editor intentionally sets an empty list, respect it.
+  const resolvedNavItems: NonNullable<HeaderProps['navItems']> = Array.isArray(navItems) ? navItems : defaultNavItems;
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -102,7 +114,7 @@ export function Header({
         <div className="container">
           <nav id="navbar-example" className="navbar navbar-expand-lg">
             <a className="navbar-brand" href="/">
-              <Image src={logoSrc} alt="Logo" width={150} height={50} />
+              <Image src={resolvedLogoSrc} alt="Logo" width={150} height={50} />
             </a>
             <button
               className="navbar-toggler"
@@ -120,7 +132,7 @@ export function Header({
               style={isMenuOpen ? { display: 'block' } : {}}
             >
               <ul className="navbar-nav ml-auto">
-                {navItems.map((item, index) => (
+                {resolvedNavItems.map((item, index) => (
                   <li
                     key={index}
                     className={`nav-item ${item.isActive ? 'active' : ''} ${item.dropdownItems ? 'dropdown dmenu' : ''} ${openDropdown === index ? 'show' : ''}`}
@@ -138,7 +150,7 @@ export function Header({
                           {item.label}
                         </a>
                         <div className={`dropdown-menu ${openDropdown === index ? 'show' : ''}`}>
-                          {item.dropdownItems.map((dropItem, dropIndex) => (
+                          {(Array.isArray(item.dropdownItems) ? item.dropdownItems : []).map((dropItem, dropIndex) => (
                             <a key={dropIndex} className="dropdown-item" href={dropItem.url}>
                               {dropItem.label}
                             </a>

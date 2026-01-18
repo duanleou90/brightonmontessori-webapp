@@ -1,7 +1,7 @@
 'use client';
 
 import { BuilderComponent, builder, useIsPreviewing } from '@builder.io/react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 // Import the registry to ensure components are registered
 import '../../builder-registry';
@@ -18,12 +18,10 @@ interface BuilderContentProps {
 
 export function RenderBuilderContent({ content, model }: BuilderContentProps) {
   const isPreviewing = useIsPreviewing();
-  const [isMounted, setIsMounted] = useState(false);
 
-  // Initialize Builder on mount and handle hydration
+  // Ensure Builder is initialized on mount (editor/preview)
   useEffect(() => {
     builder.init(process.env.NEXT_PUBLIC_BUILDER_API_KEY || '');
-    setIsMounted(true);
   }, []);
   
   // If no content is found and we're not in preview mode, show a message
@@ -55,15 +53,11 @@ export function RenderBuilderContent({ content, model }: BuilderContentProps) {
     );
   }
 
-  // Show nothing during SSR, render Content only on client
-  if (!isMounted) {
-    return null;
-  }
-
+  // When previewing/editing, Builder can fetch content client-side if needed.
   return (
     <BuilderComponent
-      content={content}
       model={model}
+      {...(content ? { content } : {})}
     />
   );
 }

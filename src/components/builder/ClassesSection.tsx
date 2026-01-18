@@ -78,14 +78,18 @@ export function ClassesSection({
                       <div className="title">{classItem.title}</div>
                       <div className="price">{classItem.price}</div>
                     </div>
-                    <div className="open-class">
-                      Open Class : <span>{classItem.openClass}</span>
-                    </div>
+                    {classItem.openClass && (
+                      <div className="open-class">
+                        Open Class : <span>{classItem.openClass}</span>
+                      </div>
+                    )}
                     <p>{classItem.description}</p>
-                    <div className="detail">
-                      <div className="age col">{classItem.ageRange}</div>
-                      <div className="size col">{classItem.classSize}</div>
-                    </div>
+                    {(classItem.ageRange || classItem.classSize) && (
+                      <div className="detail">
+                        {classItem.ageRange && <div className="age col">{classItem.ageRange}</div>}
+                        {classItem.classSize && <div className="size col">{classItem.classSize}</div>}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

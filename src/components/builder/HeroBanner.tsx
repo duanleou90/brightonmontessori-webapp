@@ -113,9 +113,11 @@ export function HeroBanner({
                   fontWeight: 'bold',
                   marginBottom: '2rem',
                 }}>{slide.heading}</h1>
-                <a href={slide.buttonUrl} className="btn btn-secondary">
-                  {slide.buttonText}
-                </a>
+                {slide.buttonText && (
+                  <a href={slide.buttonUrl} className="btn btn-secondary">
+                    {slide.buttonText}
+                  </a>
+                )}
               </div>
             </div>
           </div>

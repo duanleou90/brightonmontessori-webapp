@@ -56,9 +56,11 @@ export function FeatureBoxes({
                         <h4>{box.title}</h4>
                         <p>{box.description}</p>
                         <div className="spacer-10"></div>
-                        <a href={box.buttonUrl} className="btn">
-                          {box.buttonText}
-                        </a>
+                        {box.buttonText && (
+                          <a href={box.buttonUrl} className="btn">
+                            {box.buttonText}
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>

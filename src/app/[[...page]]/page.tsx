@@ -87,8 +87,12 @@ type UmbracoDeliveryItem = {
   contentType?: string;
   name?: string;
   route?: { path?: string | null };
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
 
 function normalizeUrlBase(url: string) {
   return url.replace(/\/+$/, '');
@@ -163,48 +167,135 @@ async function fetchUmbracoDeliveryItemByPath(path: string, isPreview?: boolean)
 function mapUmbracoEventToEventPageLayoutProps(item: UmbracoDeliveryItem | null) {
   const props = item?.properties || {};
 
-  const firstEventImageUrl: string | undefined =
-    Array.isArray(props.eventImage) && props.eventImage.length > 0 ? props.eventImage[0]?.url : undefined;
+  const eventImage = isRecord(props) ? props.eventImage : undefined;
+  const firstEventImageUrl =
+    Array.isArray(eventImage) && eventImage.length > 0 && isRecord(eventImage[0]) && typeof eventImage[0].url === 'string'
+      ? eventImage[0].url
+      : undefined;
 
   return {
     image: toAbsoluteUrl(firstEventImageUrl),
-    name: props.eventName ?? item?.name,
-    publishedDate: props.publishedDate,
-    address: props.venue,
-    startTime: props.startDate,
-    endTime: props.endDate,
-    organizerName: props.organizerName,
-    organizerPhone: props.organizerPhone,
-    organizerWebsite: props.organizerWebsite,
+    name: isRecord(props) && typeof props.eventName === 'string' ? props.eventName : item?.name,
+    publishedDate: isRecord(props) ? props.publishedDate : undefined,
+    address: isRecord(props) && typeof props.venue === 'string' ? props.venue : undefined,
+    startTime: isRecord(props) ? props.startDate : undefined,
+    endTime: isRecord(props) ? props.endDate : undefined,
+    organizerName: isRecord(props) && typeof props.organizerName === 'string' ? props.organizerName : undefined,
+    organizerPhone: isRecord(props) && typeof props.organizerPhone === 'string' ? props.organizerPhone : undefined,
+    organizerWebsite: isRecord(props) && typeof props.organizerWebsite === 'string' ? props.organizerWebsite : undefined,
   };
 }
 
-function injectEventDataIntoBuilderContent(content: any, umbracoItem: UmbracoDeliveryItem | null) {
+function makeBuilderBlockId(prefix = 'umbraco') {
+  try {
+    return `${prefix}-${crypto.randomUUID()}`;
+  } catch {
+    return `${prefix}-${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
+  }
+}
+
+function createBuilderComponentBlock(componentName: string, options: Record<string, unknown>) {
+  return {
+    '@type': '@builder.io/sdk:Element',
+    id: makeBuilderBlockId(componentName),
+    component: {
+      name: componentName,
+      options,
+    },
+    children: [],
+  };
+}
+
+function mapUmbracoContentBodyToBuilderBlocks(item: UmbracoDeliveryItem | null): Array<Record<string, unknown>> {
+  const props = item?.properties;
+  if (!isRecord(props)) return [];
+
+  const contentBody = props.contentBody;
+  if (!isRecord(contentBody)) return [];
+
+  const items = contentBody.items;
+  if (!Array.isArray(items)) return [];
+
+  const blocks: Array<Record<string, unknown>> = [];
+
+  for (const entry of items) {
+    if (!isRecord(entry)) continue;
+    const content = entry.content;
+    if (!isRecord(content)) continue;
+
+    const contentType = content.contentType;
+    const cProps = content.properties;
+
+    if (contentType === 'contentBodyText') {
+      if (!isRecord(cProps)) continue;
+      const text = cProps.text;
+
+      // Umbraco richtext commonly comes as { markup: "<p>...</p>", blocks: [...] }
+      let html: string | undefined;
+      if (isRecord(text) && typeof text.markup === 'string') html = text.markup;
+      else if (typeof text === 'string') html = text;
+
+      if (!html) continue;
+      blocks.push(createBuilderComponentBlock('EventTextBlock', { content: html }));
+      continue;
+    }
+
+    if (contentType === 'contentBodyQuote') {
+      if (!isRecord(cProps)) continue;
+      const quote = cProps.text;
+      if (typeof quote !== 'string' || !quote) continue;
+      blocks.push(createBuilderComponentBlock('EventQuote', { content: quote }));
+      continue;
+    }
+  }
+
+  return blocks;
+}
+
+function injectEventDataIntoBuilderContent(content: unknown, umbracoItem: UmbracoDeliveryItem | null) {
   if (!content || !umbracoItem) return content;
 
   const eventProps = mapUmbracoEventToEventPageLayoutProps(umbracoItem);
-  const cloned: any =
-    typeof structuredClone === 'function' ? structuredClone(content) : JSON.parse(JSON.stringify(content));
+  const umbracoMainContentBlocks = mapUmbracoContentBodyToBuilderBlocks(umbracoItem);
 
-  const visit = (node: any) => {
+  const cloned: unknown = (() => {
+    try {
+      if (typeof structuredClone === 'function') return structuredClone(content);
+    } catch {}
+    try {
+      return JSON.parse(JSON.stringify(content)) as unknown;
+    } catch {
+      return content;
+    }
+  })();
+
+  const visit = (node: unknown) => {
     if (!node) return;
     if (Array.isArray(node)) {
       for (const item of node) visit(item);
       return;
     }
-    if (typeof node !== 'object') return;
+    if (!isRecord(node)) return;
 
     // Inject into the layout (and related event components, if present).
-    const componentName = node?.component?.name;
-    if (
-      componentName === 'EventPageLayout' ||
-      componentName === 'EventHeader' ||
-      componentName === 'EventSidebar'
-    ) {
-      node.component.options = {
-        ...(node.component.options || {}),
-        ...eventProps,
-      };
+    const component = node.component;
+    if (isRecord(component) && typeof component.name === 'string') {
+      const componentName = component.name;
+      const existingOptions = isRecord(component.options) ? component.options : {};
+
+      if (componentName === 'EventPageLayout') {
+        const existingMainContent = Array.isArray(existingOptions.mainContent) ? existingOptions.mainContent : [];
+        component.options = {
+          ...existingOptions,
+          ...eventProps,
+          mainContent: [...existingMainContent, ...umbracoMainContentBlocks],
+        };
+      } else if (componentName === 'EventHeader' || componentName === 'EventSidebar') {
+        component.options = {
+          ...existingOptions,
+          ...eventProps,
+        };
+      }
     }
 
     // Recurse through common Builder element trees and any nested options that contain blocks.
@@ -213,7 +304,9 @@ function injectEventDataIntoBuilderContent(content: any, umbracoItem: UmbracoDel
     }
   };
 
-  visit(cloned?.data?.blocks);
+  if (isRecord(cloned) && isRecord(cloned.data)) {
+    visit(cloned.data.blocks);
+  }
   return cloned;
 }
 
@@ -289,7 +382,7 @@ export default async function Page(props: PageProps) {
   // If this is an Umbraco-backed event detail page, fetch event JSON by path and inject into Builder content
   let umbracoItem: UmbracoDeliveryItem | null = null;
   let hydratedContent = content;
-  let builderData: any = undefined;
+  let builderData: unknown = undefined;
 
   if (isEventDetailPage) {
     // Derive the Umbraco route from the request path, e.g. /events/<slug>/

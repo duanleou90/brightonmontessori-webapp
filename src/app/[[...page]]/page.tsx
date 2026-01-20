@@ -247,6 +247,46 @@ function mapUmbracoContentBodyToBuilderBlocks(item: UmbracoDeliveryItem | null):
       blocks.push(createBuilderComponentBlock('EventQuote', { content: quote }));
       continue;
     }
+
+    // NOTE: Umbraco alias provided is "hightlight" (typo), but we accept both.
+    if (contentType === 'hightlight' || contentType === 'highlight') {
+      if (!isRecord(cProps)) continue;
+      const text = cProps.text;
+      if (typeof text !== 'string' || !text) continue;
+      blocks.push(createBuilderComponentBlock('EventHighlight', { content: text }));
+      continue;
+    }
+
+    if (contentType === 'accordion') {
+      if (!isRecord(cProps)) continue;
+      const accordionItems = cProps.accordionItems;
+      if (!isRecord(accordionItems)) continue;
+      const aItems = accordionItems.items;
+      if (!Array.isArray(aItems)) continue;
+
+      const mappedItems: Array<Record<string, unknown>> = [];
+      for (const aEntry of aItems) {
+        if (!isRecord(aEntry)) continue;
+        const aContent = aEntry.content;
+        if (!isRecord(aContent)) continue;
+        if (aContent.contentType !== 'accordionItem') continue;
+
+        const aProps = aContent.properties;
+        if (!isRecord(aProps)) continue;
+
+        const title = typeof aProps.title === 'string' ? aProps.title : undefined;
+        const description = typeof aProps.description === 'string' ? aProps.description : undefined;
+        if (!title && !description) continue;
+
+        mappedItems.push({
+          title,
+          content: description,
+        });
+      }
+
+      blocks.push(createBuilderComponentBlock('EventAccordion', { items: mappedItems }));
+      continue;
+    }
   }
 
   return blocks;

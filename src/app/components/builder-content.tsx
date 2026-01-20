@@ -14,9 +14,10 @@ if (typeof window !== 'undefined') {
 interface BuilderContentProps {
   content: any;
   model: string;
+  data?: any;
 }
 
-export function RenderBuilderContent({ content, model }: BuilderContentProps) {
+export function RenderBuilderContent({ content, model, data }: BuilderContentProps) {
   const isPreviewing = useIsPreviewing();
 
   // Ensure Builder is initialized on mount (editor/preview)
@@ -58,6 +59,7 @@ export function RenderBuilderContent({ content, model }: BuilderContentProps) {
     <BuilderComponent
       model={model}
       {...(content ? { content } : {})}
+      {...(data ? { data } : {})}
     />
   );
 }

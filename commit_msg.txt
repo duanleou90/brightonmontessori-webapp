@@ -1,6 +1,0 @@
-Implement secure preview mode with Next.js draft mode and Umbraco integration
-
-- Added /api/preview and /api/preview/exit routes for secure preview toggling.
-- Updated Builder.io and Umbraco content fetching to support draft content.
-- Added a PreviewBanner component for active preview feedback.
-- Updated README with preview mode setup instructions.

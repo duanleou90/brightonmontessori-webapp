@@ -1,3 +1,5 @@
+import { draftMode } from 'next/headers';
+import { PreviewBanner } from '../components/preview-banner';
 import { RenderBuilderContent } from '../components/builder-content';
 
 interface PageProps {
@@ -30,6 +32,10 @@ async function fetchBuilderContent({
     return null;
   }
 
+  // NOTE: We intentionally do NOT attempt to fetch Builder draft/unpublished content.
+  // Builder's Content API can return the published version even with includeUnpublished,
+  // once an entry has been published at least once (known limitation).
+  const cachebustParam = isPreview ? `&cachebust=${Date.now()}` : '';
   const fetchOptions: RequestInit & { next?: { revalidate: number } } = isPreview
     ? { cache: 'no-store' }
     : { next: { revalidate: 60 } };
@@ -40,7 +46,7 @@ async function fetchBuilderContent({
     if (contentId) {
       // Try direct-by-id endpoint (some Builder setups support this)
       const directResponse = await fetch(
-        `https://cdn.builder.io/api/v3/content/${model}/${encodeURIComponent(contentId)}?apiKey=${apiKey}&cachebust=true`,
+        `https://cdn.builder.io/api/v3/content/${model}/${encodeURIComponent(contentId)}?apiKey=${apiKey}${cachebustParam}`,
         fetchOptions
       );
 
@@ -52,7 +58,7 @@ async function fetchBuilderContent({
 
       // Fallback: query for id via list endpoint
       const queryResponse = await fetch(
-        `https://cdn.builder.io/api/v3/content/${model}?apiKey=${apiKey}&query.id=${encodeURIComponent(contentId)}&cachebust=true`,
+        `https://cdn.builder.io/api/v3/content/${model}?apiKey=${apiKey}&query.id=${encodeURIComponent(contentId)}${cachebustParam}`,
         fetchOptions
       );
 
@@ -66,8 +72,11 @@ async function fetchBuilderContent({
 
     if (!urlPath) return null;
 
+    // Prefer userAttributes.urlPath for targeting (works best with preview + drafts)
     const urlResponse = await fetch(
-      `https://cdn.builder.io/api/v3/content/${model}?apiKey=${apiKey}&url=${encodeURIComponent(urlPath)}&cachebust=true`,
+      `https://cdn.builder.io/api/v3/content/${model}?apiKey=${apiKey}&userAttributes.urlPath=${encodeURIComponent(
+        urlPath
+      )}${cachebustParam}`,
       fetchOptions
     );
 
@@ -147,15 +156,30 @@ async function fetchUmbracoDeliveryItemByPath(path: string, isPreview?: boolean)
 
   if (!base) return null;
 
-  const fetchOptions: RequestInit & { next?: { revalidate: number } } = isPreview
-    ? { cache: 'no-store' }
-    : { next: { revalidate: 60 } };
+  const apiKey =
+    process.env.UMBRACO_DELIVERY_API_KEY ||
+    process.env.NEXT_PUBLIC_UMBRACO_DELIVERY_API_KEY ||
+    '';
+  if (isPreview && !apiKey) {
+    console.warn('[Umbraco] Preview requested but UMBRACO_DELIVERY_API_KEY is not set.');
+  }
+  const headers: HeadersInit = {
+    ...(apiKey ? { 'Api-Key': apiKey } : {}),
+    ...(isPreview ? { Preview: 'true' } : {}),
+  };
+  const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
+    ...(isPreview ? { cache: 'no-store' } : { next: { revalidate: 60 } }),
+    ...(Object.keys(headers).length > 0 ? { headers } : {}),
+  };
 
   const normalizedPath = ensureTrailingSlash(ensureLeadingSlash(path));
   const url = `${normalizeUrlBase(base)}/content/item${normalizedPath}`;
 
   try {
     const res = await fetch(url, fetchOptions);
+    if (isPreview && (res.status === 401 || res.status === 403)) {
+      console.warn('[Umbraco] Preview request rejected. Check Delivery API key and preview access.');
+    }
     if (!res.ok) return null;
     return (await res.json()) as UmbracoDeliveryItem;
   } catch (error) {
@@ -354,6 +378,7 @@ export default async function Page(props: PageProps) {
   const params = await props.params;
   const searchParams = (await props.searchParams) || {};
   const urlPath = '/' + (params?.page?.join('/') || '');
+  const { isEnabled: isDraftMode } = await draftMode();
   
   const apiKey = process.env.NEXT_PUBLIC_BUILDER_API_KEY || '';
 
@@ -414,7 +439,8 @@ export default async function Page(props: PageProps) {
     firstString(searchParams['builder.contentId']) ||
     firstString(searchParams['builder.entry']);
 
-  const isPreview = Boolean(firstString(searchParams['builder.preview'])) || Boolean(firstString(searchParams.preview));
+  // Preview is cookie-based only (Next.js draft mode). Query params like ?preview=1 are ignored.
+  const isPreview = isDraftMode;
 
   // Fetch content server-side using Content API
   const content = await fetchBuilderContent({ model, urlPath: builderUrlPath, contentId, isPreview });
@@ -454,7 +480,8 @@ export default async function Page(props: PageProps) {
 
   return (
     <>
-      <RenderBuilderContent content={hydratedContent} model={model} data={builderData} />
+      {isPreview ? <PreviewBanner /> : null}
+      <RenderBuilderContent content={hydratedContent} model={model} data={builderData} preview={isPreview} />
     </>
   );
 }

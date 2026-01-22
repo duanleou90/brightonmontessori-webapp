@@ -15,9 +15,10 @@ interface BuilderContentProps {
   content: any;
   model: string;
   data?: any;
+  preview?: boolean;
 }
 
-export function RenderBuilderContent({ content, model, data }: BuilderContentProps) {
+export function RenderBuilderContent({ content, model, data, preview }: BuilderContentProps) {
   const isPreviewing = useIsPreviewing();
 
   // Ensure Builder is initialized on mount (editor/preview)
@@ -26,7 +27,7 @@ export function RenderBuilderContent({ content, model, data }: BuilderContentPro
   }, []);
   
   // If no content is found and we're not in preview mode, show a message
-  if (!content && !isPreviewing) {
+  if (!content && !isPreviewing && !preview) {
     return (
       <div style={{ padding: '50px', textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
         <h1>Page Not Found</h1>
